@@ -19,6 +19,7 @@ export default function Profile() {
     weight_kg: user?.weight_kg?.toString() || '',
     height_cm: user?.height_cm?.toString() || '',
     dietary_preference: user?.dietary_preference || 'none',
+    health_goal: user?.health_goal || 'balanced diet',
     daily_calorie_goal: user?.daily_calorie_goal?.toString() || '2000',
   });
   const [loading, setLoading] = useState(false);
@@ -33,6 +34,7 @@ export default function Profile() {
         weight_kg: form.weight_kg ? parseFloat(form.weight_kg) : null,
         height_cm: form.height_cm ? parseFloat(form.height_cm) : null,
         dietary_preference: form.dietary_preference,
+        health_goal: form.health_goal,
         daily_calorie_goal: parseInt(form.daily_calorie_goal) || 2000,
       };
       const { data } = await api.put('/auth/profile', payload);
@@ -76,8 +78,9 @@ export default function Profile() {
           <div>
             <h2 className="text-lg font-heading font-semibold text-white">{user?.name}</h2>
             <p className="text-sm text-slate-400">{user?.email}</p>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex flex-wrap items-center gap-2 mt-1">
               <Badge color="green">{form.dietary_preference === 'none' ? 'No preference' : form.dietary_preference}</Badge>
+              <Badge color="blue" className="capitalize">{form.health_goal}</Badge>
               {bmi && <Badge color={bmiColor}>BMI: {bmi} ({bmiCategory})</Badge>}
             </div>
           </div>
@@ -101,7 +104,7 @@ export default function Profile() {
 
           <div>
             <label className="label-text">Dietary Preference</label>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-4">
               {dietOptions.map(d => (
                 <button key={d} type="button" onClick={() => setForm({ ...form, dietary_preference: d })}
                   className={`py-2.5 px-3 rounded-xl text-xs font-medium capitalize transition-all duration-200
@@ -114,7 +117,22 @@ export default function Profile() {
             </div>
           </div>
 
-          <Button type="submit" loading={loading} icon={HiSave} className="w-full">
+          <div>
+            <label className="label-text">Health Goal</label>
+            <div className="grid grid-cols-3 gap-2">
+              {['weight loss', 'balanced diet', 'muscle gain'].map(g => (
+                <button key={g} type="button" onClick={() => setForm({ ...form, health_goal: g })}
+                  className={`py-2.5 px-3 rounded-xl text-xs font-medium capitalize transition-all duration-200
+                    ${form.health_goal === g
+                      ? 'bg-secondary/15 text-secondary-light border border-secondary/30'
+                      : 'bg-dark-700/50 text-slate-400 border border-white/5 hover:border-white/10'}`}>
+                  {g}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Button type="submit" loading={loading} icon={HiSave} className="w-full mt-6">
             Save Changes
           </Button>
         </form>

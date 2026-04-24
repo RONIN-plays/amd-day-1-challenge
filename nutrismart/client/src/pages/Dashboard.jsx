@@ -8,6 +8,7 @@ import NutritionRing from '../components/meals/NutritionRing';
 import NudgeCard from '../components/nudges/NudgeCard';
 import { HiTrendingUp, HiClipboardList, HiLightBulb, HiBell } from 'react-icons/hi';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import FoodSuggestionCard from '../components/recommendations/FoodSuggestionCard';
 import toast from 'react-hot-toast';
 
 export default function Dashboard() {
@@ -15,18 +16,20 @@ export default function Dashboard() {
   const [today, setToday] = useState(null);
   const [weekly, setWeekly] = useState([]);
   const [nudges, setNudges] = useState([]);
+  const [recs, setRecs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
-      const [t, w, n] = await Promise.all([
-        api.get('/meals/today'), api.get('/meals/stats/weekly'), api.get('/nudges/active')
+      const [t, w, n, r] = await Promise.all([
+        api.get('/meals/today'), api.get('/meals/stats/weekly'), api.get('/nudges/active'), api.get('/recommendations')
       ]);
       setToday(t.data);
       setWeekly(w.data.stats || []);
       setNudges(n.data.nudges || []);
+      setRecs(r.data.recommendations?.slice(0, 3) || []);
     } catch { toast.error('Failed to load dashboard'); }
     finally { setLoading(false); }
   };
@@ -34,6 +37,11 @@ export default function Dashboard() {
   const completeNudge = async (id) => {
     try { await api.post(`/nudges/${id}/complete`); setNudges(nudges.filter(n => n.id !== id)); toast.success('Nudge completed!'); }
     catch { toast.error('Failed'); }
+  };
+
+  const dismissRec = async (id) => {
+    try { await api.post(`/recommendations/${id}/dismiss`); setRecs(recs.filter(r => r.id !== id)); }
+    catch { toast.error('Failed to dismiss'); }
   };
 
   if (loading) return <div className="page-container flex justify-center pt-20"><Loader size="lg" /></div>;
@@ -116,17 +124,30 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Active Nudges */}
-      {nudges.length > 0 && (
-        <div className="mb-8">
-          <h3 className="text-sm font-medium text-slate-400 mb-4 uppercase tracking-wider">Active Nudges</h3>
-          <div className="grid sm:grid-cols-2 gap-3">
-            {nudges.slice(0, 4).map((n, i) => (
-              <NudgeCard key={n.id} nudge={n} onComplete={completeNudge} onDelete={() => {}} index={i} />
-            ))}
+      {/* Active Nudges & Recommendations */}
+      <div className="grid lg:grid-cols-2 gap-6 mb-8">
+        {nudges.length > 0 && (
+          <div>
+            <h3 className="text-sm font-medium text-slate-400 mb-4 uppercase tracking-wider">Active Nudges</h3>
+            <div className="space-y-3">
+              {nudges.slice(0, 3).map((n, i) => (
+                <NudgeCard key={n.id} nudge={n} onComplete={completeNudge} onDelete={() => {}} index={i} />
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {recs.length > 0 && (
+          <div>
+            <h3 className="text-sm font-medium text-slate-400 mb-4 uppercase tracking-wider">Smart Suggestions</h3>
+            <div className="space-y-3">
+              {recs.map((r, i) => (
+                <FoodSuggestionCard key={r.id} rec={r} onDismiss={dismissRec} index={i} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

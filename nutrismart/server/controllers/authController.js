@@ -20,7 +20,7 @@ function generateTokens(user) {
 
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, health_goal } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'Name, email, and password are required.' });
@@ -40,9 +40,9 @@ exports.register = async (req, res, next) => {
     const password_hash = await bcrypt.hash(password, salt);
 
     const stmt = db.prepare(
-      'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)'
+      'INSERT INTO users (name, email, password_hash, health_goal) VALUES (?, ?, ?, ?)'
     );
-    const result = stmt.run(name, email, password_hash);
+    const result = stmt.run(name, email, password_hash, health_goal || 'balanced diet');
 
     const user = {
       id: result.lastInsertRowid,
@@ -50,6 +50,7 @@ exports.register = async (req, res, next) => {
       email,
       dietary_preference: 'none',
       daily_calorie_goal: 2000,
+      health_goal: health_goal || 'balanced diet',
     };
 
     const tokens = generateTokens(user);
@@ -120,7 +121,7 @@ exports.refresh = (req, res, next) => {
 
 exports.getMe = (req, res, next) => {
   try {
-    const user = db.prepare('SELECT id, name, email, age, weight_kg, height_cm, dietary_preference, daily_calorie_goal, created_at FROM users WHERE id = ?').get(req.user.id);
+    const user = db.prepare('SELECT id, name, email, age, weight_kg, height_cm, dietary_preference, daily_calorie_goal, health_goal, created_at FROM users WHERE id = ?').get(req.user.id);
 
     if (!user) {
       return res.status(404).json({ error: 'User not found.' });
@@ -134,7 +135,7 @@ exports.getMe = (req, res, next) => {
 
 exports.updateProfile = (req, res, next) => {
   try {
-    const { name, age, weight_kg, height_cm, dietary_preference, daily_calorie_goal } = req.body;
+    const { name, age, weight_kg, height_cm, dietary_preference, daily_calorie_goal, health_goal } = req.body;
 
     const stmt = db.prepare(`
       UPDATE users SET
@@ -143,13 +144,14 @@ exports.updateProfile = (req, res, next) => {
         weight_kg = COALESCE(?, weight_kg),
         height_cm = COALESCE(?, height_cm),
         dietary_preference = COALESCE(?, dietary_preference),
-        daily_calorie_goal = COALESCE(?, daily_calorie_goal)
+        daily_calorie_goal = COALESCE(?, daily_calorie_goal),
+        health_goal = COALESCE(?, health_goal)
       WHERE id = ?
     `);
 
-    stmt.run(name, age, weight_kg, height_cm, dietary_preference, daily_calorie_goal, req.user.id);
+    stmt.run(name, age, weight_kg, height_cm, dietary_preference, daily_calorie_goal, health_goal, req.user.id);
 
-    const user = db.prepare('SELECT id, name, email, age, weight_kg, height_cm, dietary_preference, daily_calorie_goal, created_at FROM users WHERE id = ?').get(req.user.id);
+    const user = db.prepare('SELECT id, name, email, age, weight_kg, height_cm, dietary_preference, daily_calorie_goal, health_goal, created_at FROM users WHERE id = ?').get(req.user.id);
 
     res.json({ message: 'Profile updated', user });
   } catch (err) {

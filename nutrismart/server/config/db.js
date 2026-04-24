@@ -26,8 +26,16 @@ function initializeDatabase() {
       height_cm REAL,
       dietary_preference TEXT DEFAULT 'none',
       daily_calorie_goal INTEGER DEFAULT 2000,
+      health_goal TEXT DEFAULT 'balanced diet',
       created_at TEXT DEFAULT (datetime('now'))
     );
+
+    try {
+      db.exec("ALTER TABLE users ADD COLUMN health_goal TEXT DEFAULT 'balanced diet'");
+    } catch (err) {
+      // Column might already exist, ignore
+    }
+    
 
     CREATE TABLE IF NOT EXISTS meals (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

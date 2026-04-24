@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 
 export default function Register() {
   const { user, register } = useAuth();
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '', health_goal: 'balanced diet' });
   const [loading, setLoading] = useState(false);
 
   if (user) return <Navigate to="/dashboard" replace />;
@@ -21,7 +21,7 @@ export default function Register() {
     if (form.password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
     setLoading(true);
     try {
-      await register(form.name, form.email, form.password);
+      await register(form.name, form.email, form.password, form.health_goal);
       toast.success('Account created! Welcome to NutriSmart 🌱');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Registration failed');
@@ -57,6 +57,22 @@ export default function Register() {
               value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
             <Input label="Confirm Password" type="password" placeholder="••••••••" icon={HiLockClosed}
               value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })} required />
+            
+            <div>
+              <label className="label-text">Primary Health Goal</label>
+              <div className="grid grid-cols-3 gap-2">
+                {['weight loss', 'balanced diet', 'muscle gain'].map(g => (
+                  <button key={g} type="button" onClick={() => setForm({ ...form, health_goal: g })}
+                    className={`py-2 px-3 rounded-xl text-xs font-medium capitalize transition-all duration-200
+                      ${form.health_goal === g
+                        ? 'bg-primary/15 text-primary border border-primary/30'
+                        : 'bg-dark-700/50 text-slate-400 border border-white/5 hover:border-white/10'}`}>
+                    {g}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <Button type="submit" loading={loading} className="w-full">Create Account</Button>
           </form>
         </div>
